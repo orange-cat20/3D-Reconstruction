@@ -1,0 +1,182 @@
+function zebrafish_debug_tool()
+
+    %% 1. 加载数据
+    
+    [file, path] = uigetfile({'*.tif;*.tiff;*.ome.tif'}, '选择3D Tiff数据');
+    if isequal(file, 0), return; end
+    fullPath = fullfile(path, file);
+    info = imfinfo(fullPath);
+    num_slices = numel(info);
+    fprintf('正在加载 %d 层图像...\n', num_slices);
+    data = zeros(info(1).Height, info(1).Width, num_slices, 'single');
+        for i = 1:num_slices
+            data(:,:,i) = single(imread(fullPath, i));
+        end
+    fprintf('展示原始数据...\n');
+    volumeViewer(data);
+    input('检查完数据后，请在命令行按 Enter 继续...', 's');
+    
+    %% 2. ROI 选择 (保持原样)
+    
+    curr_slice = round(num_slices/2);
+    h_fig = figure('Name', '滚动翻层，选定后点击按钮', 'NumberTitle', 'off');
+    ax = axes('Parent', h_fig);    
+    img_handle = imshow(data(:,:,curr_slice), [], 'Parent', ax);    
+    set(h_fig, 'WindowScrollWheelFcn', @update_slice);    
+    uicontrol('Style', 'pushbutton', 'String', '选定当前层并开始画ROI', ...
+'Units', 'normalized', 'Position', [0.35 0.05 0.3 0.05], 'Callback', @(src,e) uiresume(h_fig));    
+    uiwait(h_fig);
+    h_poly = drawpolygon('Parent', ax, 'Color', 'g');    
+    mask = createMask(h_poly);    
+    stats = regionprops(mask, 'BoundingBox');    
+    bbox = round(stats.BoundingBox);    
+    display(h_poly.Position);
+    close(h_fig);
+    
+    %% 3. 数据裁剪与初步增强
+    
+    x_range = max(1, bbox(1)):min(size(data,2), bbox(1)+bbox(3));    
+    y_range = max(1, bbox(2)):min(size(data,1), bbox(2)+bbox(4));    
+    % z_range = 63:180;    
+    % target_data = data(y_range, x_range, z_range);  
+    target_data = data(y_range, x_range, :);
+    target_mask = mask(y_range, x_range);    
+    target_data = target_data .* cast(target_mask, 'single');    
+    fprintf('检查点 1: Top-hat 增强中...\n');    
+    se = strel('sphere', 7);    
+    vessels_enhanced = imtophat(target_data, se);    
+    vessels_enhanced = medfilt3(vessels_enhanced, [3 3 3]);    
+    
+    % --- 检查点 1 ---
+    
+    fprintf('展示增强结果，请确认血管是否清晰可见...\n');    
+    volumeViewer(vessels_enhanced);    
+    input('检查完增强图后，请在命令行按 Enter 继续...', 's');
+
+    %% 4. 空间等向性插值
+    
+    xy_res = 0.414;    
+    z_res = 1.0;    
+    z_scale = z_res / xy_res;    
+    fprintf('正在进行内存优化版 Z 轴插值 (倍数: %d)...\n', z_scale);  
+    old_size = size(vessels_enhanced);    
+    new_z_size = round(old_size(3) * z_scale);  
+    
+    % 1. 创建插值对象 (不需要 meshgrid)    
+    % 默认输入是 single 类型以节省空间    
+    V = single(vessels_enhanced);    
+    gi = griddedInterpolant(V, 'linear');        
+    % 2. 预分配目标矩阵    
+    % 使用 single 类型，内存减半    
+    vessels_iso = zeros(old_size(1), old_size(2), new_z_size, 'single');  
+    % 3. 按层插值 (避免一次性生成巨大坐标矩阵)    
+    [xq, yq] = ndgrid(1:old_size(1), 1:old_size(2));    
+    for z_range = 1:new_z_size    
+    % 计算当前新层对应的旧层位置    
+        z_orig = (z_range - 1) / z_scale + 1;   
+        % 执行当前层的插值    
+        vessels_iso(:,:,z_range) = gi({xq(:,1), yq(1,:), z_orig});   
+            if mod(z_range, 200) == 0    
+                fprintf('插值进度: %d/%d 层...\n', z_range, new_z_size);    
+            end    
+    end
+        
+    clear V gi xq yq; % 及时释放临时变量    
+    fprintf('展示插值结果...\n');    
+    volumeViewer(vessels_iso);
+    
+    %% 5. 分割阶段 (改用分位数阈值)
+    
+    fprintf('检查点 2: 正在分割图像...\n');    
+    % 弃用 graythresh，改用分位数法    
+    % 假设血管占总体积的 5% (根据实际调整 0.95 这个值，越低保留的血管越多)    
+    non_zero_vals = vessels_iso(vessels_iso > 0);    
+    if isempty(non_zero_vals), error('增强后数据全为空，请检查 Top-hat 半径'); end    
+    threshold = quantile(non_zero_vals, 0.95); % 先从 70% 分位开始，保留较暗信号    
+    binary_vessels = vessels_iso > threshold;    
+    % --- 检查点 2 ---    
+    fprintf('展示二值化结果，如果血管断裂严重，请调低代码中的 quantile 阈值...\n');    
+    volumeViewer(binary_vessels);    
+    input('检查完二值化图后，请在命令行按 Enter 继续...', 's');
+    
+    %% 6. 连通性增强
+    
+    fprintf('检查点 3: 填充与闭运算...\n');    
+    % 使用较大的球体连接断裂    
+    se_close = strel('sphere', 9);    
+    solid_vessels = imclose(binary_vessels, se_close);    
+    solid_vessels = imfill(solid_vessels, 'holes');    
+    % 在进行 bwskel 之前    
+    solid_vessels = imopen(solid_vessels, strel('sphere', 3)); % 抹平表面    
+    solid_vessels = imclose(solid_vessels, strel('sphere', 3)); % 再次连接    
+    % --- 检查点 3 ---    
+    fprintf('展示实体化结果，检查血管是否连成了实心管道...\n');    
+    volumeViewer(solid_vessels);    
+    input('检查完实体图后，请在命令行按 Enter 继续...', 's');
+
+    %% 7. 骨架化
+    
+    fprintf('正在提取最终骨架...\n');    
+    % 减小 MinBranchLength，防止短血管被删掉    
+    skeleton = bwskel(solid_vessels, 'MinBranchLength', 50);   
+    fprintf('最终检查: 骨架提取完成！\n');    
+    volumeViewer(skeleton);    
+    % 在屏幕上显示全脑血管骨架的投影    
+    figure('Name', '骨架连通性验证 (2D 投影)');    
+    skeleton_mip = max(skeleton, [], 3); % 执行最大强度投影    
+    imshow(skeleton_mip, []);    
+    title('如果这张图里的线是连贯的，说明 3D 骨架逻辑正确');
+    
+    %% 11. 提取骨架空间坐标与管径信息
+    
+    fprintf('正在构建 3D 拓扑模型...\n');   
+    % 获取骨架点的索引    
+    skel_indices = find(skeleton);    
+    [py, px, pz] = ind2sub(size(skeleton), skel_indices);    
+    % 计算局部管径 (使用距离变换)    
+    % 这一步模拟了 Neurolucida 对血管粗细的自动测量    
+    dist_map = bwdist(~solid_vessels);    
+    vessel_radius = dist_map(skel_indices); % 提取骨架点对应的半径    
+    
+    %% 12. 高级 3D 渲染 (模拟 Neurolucida 视觉效果)
+
+    figure('Color', 'w', 'Name', '3D Vasculature Reconstruction');
+    ax = axes;
+    % 使用 scatter3 绘制骨架点，颜色代表直径，点的大小也代表直径
+    % 这样可以直观看到血管的粗细变化
+    scatter3(px, py, pz, vessel_radius*2, vessel_radius, 'filled', 'MarkerEdgeAlpha', 0.5);
+    % 设置配色方案（医学绘图常用热点图，越红代表越粗）
+    colormap(jet);
+    cb = colorbar;
+    ylabel(cb, 'Vessel Radius (pixels)');
+    % 设置光照和材质，增加立体感
+    view(3);
+    axis equal;
+    grid on;
+    set(ax, 'ZDir', 'reverse'); % 显微镜数据通常 Z 轴向下延伸
+    xlabel('X (px)'); ylabel('Y (px)'); zlabel('Z (px)');
+    title('3D Brain Vasculature Reconstruction');
+    % 增强视觉效果：添加光照
+    light('Position', [1 1 1], 'Style', 'infinite');
+    lighting gouraud;
+    material dull;
+
+    %% 13. 可选：绘制连通的线段 (Graph-based)
+    % 如果你想让它看起来更像 Neurolucida 的线条追踪效果
+    hold on;
+    % 仅展示部分点以防止卡顿，或使用 plot3 连接特定路径
+    % 这里我们使用简单的 alpha 混合让结构更通透
+    ax.Color = [0.1 0.1 0.1]; % 深色背景更显专业
+    set(gcf, 'InvertHardcopy', 'off');
+    % --- 嵌套函数 ---    
+    function update_slice(~, event)    
+        if event.VerticalScrollCount > 0        
+            curr_slice = min(curr_slice + 1, num_slices);        
+        else
+            curr_slice = max(curr_slice - 1, 1);
+        end    
+        set(img_handle, 'CData', data(:,:,curr_slice));    
+        title(ax, sprintf('当前层数: %d / %d', curr_slice, num_slices));    
+    end
+
+end
