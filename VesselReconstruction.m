@@ -13,8 +13,8 @@ function zebrafish_debug_tool()
             data(:,:,i) = single(imread(fullPath, i));
         end
     fprintf('展示原始数据...\n');
-    % volumeViewer(data);
-    % input('检查完数据后，请在命令行按 Enter 继续...', 's');
+    volumeViewer(data);
+    input('检查完数据后，请在命令行按 Enter 继续...', 's');
     
 %     %% 2. ROI 选择 (保持原样)
 % 
@@ -32,32 +32,32 @@ function zebrafish_debug_tool()
 %     bbox = round(stats.BoundingBox); 
 %     disp(bbox);    
 %     close(h_fig);
-    bbox = [320, 288, 240, 229];
+    % bbox = [320, 288, 240, 229];
 
     
-    %% 3. 数据裁剪与初步增强
-    
-    x_range = max(1, bbox(1)):min(size(data,2), bbox(1)+bbox(3));    
-    y_range = max(1, bbox(2)):min(size(data,1), bbox(2)+bbox(4));    
-    z_range = 53:185;    
-    target_data = data(y_range, x_range, z_range);  
-    fprintf('展示截取后的数据...\n');    
-    volumeViewer(target_data);    
-    input('检查完截取区域后，请在命令行按 Enter 继续...', 's');
-    % 定义输出文件名
-    outputFileName = fullfile(path, ['Cropped_' file]);
-    
-    % 循环将每一层写入新的 TIFF
-    for k = 1:size(target_data, 3)
-        if k == 1
-            % 第一层：创建文件
-            imwrite(uint16(target_data(:,:,k)), outputFileName);
-        else
-            % 后续层：追加到文件末尾 (WriteMode = append)
-            imwrite(uint16(target_data(:,:,k)), outputFileName, 'WriteMode', 'append');
-        end
-    end
-    fprintf('裁剪后的数据已保存至: %s\n', outputFileName);
+    % %% 3. 数据裁剪与初步增强
+    % 
+    % x_range = max(1, bbox(1)):min(size(data,2), bbox(1)+bbox(3));    
+    % y_range = max(1, bbox(2)):min(size(data,1), bbox(2)+bbox(4));    
+    % z_range = 53:185;    
+    % target_data = data(y_range, x_range, z_range);  
+    % fprintf('展示截取后的数据...\n');    
+    % volumeViewer(target_data);    
+    % input('检查完截取区域后，请在命令行按 Enter 继续...', 's');
+    % % 定义输出文件名
+    % outputFileName = fullfile(path, ['Cropped_' file]);
+    % 
+    % % 循环将每一层写入新的 TIFF
+    % for k = 1:size(target_data, 3)
+    %     if k == 1
+    %         % 第一层：创建文件
+    %         imwrite(uint16(target_data(:,:,k)), outputFileName);
+    %     else
+    %         % 后续层：追加到文件末尾 (WriteMode = append)
+    %         imwrite(uint16(target_data(:,:,k)), outputFileName, 'WriteMode', 'append');
+    %     end
+    % end
+    % fprintf('裁剪后的数据已保存至: %s\n', outputFileName);
     % % target_data = data(y_range, x_range, :);
     % % target_mask = mask(y_range, x_range);    
     % % target_data = target_data .* cast(target_mask, 'single');    
