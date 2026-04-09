@@ -36,7 +36,7 @@
     % 
     % roi_pos = round(h_rect.Position);   % [x, y, width, height]，x/y 为左上角
     % close(fig_roi);
-    roi_pos = [298, 250, 117, 226];
+    roi_pos = [377, 267, 188, 353];
 
     % 防止 ROI 超出图像边界
     x1 = max(1, roi_pos(1));
@@ -56,11 +56,11 @@
     pixel_size_z = 1.0;
     z_scale = pixel_size_z / pixel_size_xy;
     V_iso = imresize3(data, [size(data,1), size(data,2), round(size(data,3)*z_scale)], 'linear');
-    volumeViewer(V_iso);
+    % volumeViewer(V_iso);
     %% preprocessing and denoising
     V_median = medfilt3(V_iso, [5 5 5]);
     V_median = medfilt3(V_median, [3 3 3]);
-    se = strel('sphere', 5); 
+    se = strel('sphere', 3); 
     V_tophat = imtophat(V_median, se);
     volumeViewer(V_tophat);
     %% normalisation
@@ -68,7 +68,7 @@
     V_norm = double(V_tophat) / double(V_max);
     % volumeViewer(V_norm);
     %% Binarization
-    thresh_manual = 0.30;
+    thresh_manual = 0.12;
     thresh_otsu   = thresh_manual;
      
     V_bin = V_norm > thresh_otsu;
@@ -163,24 +163,24 @@
     
     fprintf('多边形选取完成，保留骨架体素数: %d\n', sum(V_skel(:)));
     
-    % --- 预览选取结果 ---
-    mip_skel_after = max(single(V_skel), [], 3);
-    figure('Name', '多边形选取后的骨架 MIP', 'Position', [100 100 900 700]);
-    rgb_check = repmat(mip_iso_bg, [1,1,3]);
-    rgb_check(:,:,1) = max(rgb_check(:,:,1), mip_skel_after);  % 红色高亮保留部分
-    rgb_check(:,:,2) = rgb_check(:,:,2) .* ~logical(mip_skel_after);
-    rgb_check(:,:,3) = rgb_check(:,:,3) .* ~logical(mip_skel_after);
-    % 多边形边界叠加
-    imshow(rgb_check, 'InitialMagnification', 'fit');
-    hold on;
-    pgon_closed = [poly_vertices; poly_vertices(1,:)];  % 闭合多边形
-    plot(pgon_closed(:,1), pgon_closed(:,2), 'c-', 'LineWidth', 1.5);
-    title('选取后骨架（红色）+ 多边形边界（青色）', 'FontSize', 11);
+    % % --- 预览选取结果 ---
+    % mip_skel_after = max(single(V_skel), [], 3);
+    % figure('Name', '多边形选取后的骨架 MIP', 'Position', [100 100 900 700]);
+    % rgb_check = repmat(mip_iso_bg, [1,1,3]);
+    % rgb_check(:,:,1) = max(rgb_check(:,:,1), mip_skel_after);  % 红色高亮保留部分
+    % rgb_check(:,:,2) = rgb_check(:,:,2) .* ~logical(mip_skel_after);
+    % rgb_check(:,:,3) = rgb_check(:,:,3) .* ~logical(mip_skel_after);
+    % % 多边形边界叠加
+    % imshow(rgb_check, 'InitialMagnification', 'fit');
+    % hold on;
+    % pgon_closed = [poly_vertices; poly_vertices(1,:)];  % 闭合多边形
+    % plot(pgon_closed(:,1), pgon_closed(:,2), 'c-', 'LineWidth', 1.5);
+    % title('选取后骨架（红色）+ 多边形边界（青色）', 'FontSize', 11);
 
 %% 
     V_viewer = V_iso_disp;        % 复制原始体，保留真实强度
     V_viewer(V_skel) = 1.0;       % 骨架位置强制写为最大值
-    volumeViewer(V_viewer);
+    % volumeViewer(V_viewer);
     mip_skeleton = max(V_skel, [], 3);
     figure
     imshow(mip_skeleton, []);
@@ -222,7 +222,7 @@
     % --- Step 4：骨架写入全图体数据 → volumeViewer ---
     V_full_viewer = data_full_disp;
     V_full_viewer(skel_full) = 1.0;
-    volumeViewer(V_full_viewer);
+    % volumeViewer(V_full_viewer);
     
     % --- Step 5：MIP 叠加图（全图坐标）---
     mip_data_full = max(data_full_disp, [], 3);
@@ -242,7 +242,7 @@
     rectangle('Position', [x1, y1, roi_w, roi_h], ...
               'EdgeColor', 'cyan', 'LineWidth', 1.5, 'LineStyle', '--');
     title('骨架 MIP 高亮叠加至原始全图（青色框=ROI区域）', 'FontSize', 11);
-    out_tif = fullfile(path, [file(1:end-4) '_skeleton_overlay7.tif']);
+    out_tif = fullfile(path, [file(1:end-4) '_skeleton_overlay1.tif']);
     V_save  = uint16(V_full_viewer / max(V_full_viewer(:)) * 65535);  % 转为16bit
     for i = 1:size(V_save, 3)
         if i == 1
