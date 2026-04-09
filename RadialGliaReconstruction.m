@@ -15,28 +15,28 @@
     data_full_disp = data;
     % volumeViewer(data);
     % %% Data Cropped
-    % % ref_mip = max(data, [], 3);                         % Z轴最大强度投影
-    % % ref_disp = double(ref_mip);
-    % % ref_disp = ref_disp / max(ref_disp(:) + eps);       % 归一化到[0,1]便于显示
-    % % 
-    % % fig_roi = figure('Name', 'ROI Selection — Draw rectangle on MIP', ...
-    % %                  'Position', [200 200 900 700]);
-    % % imshow(ref_disp, [], 'InitialMagnification', 'fit');
-    % % title({'在 MIP 图上拖拽矩形框选 XY ROI 区域', ...
-    % %        '框选完成后双击矩形确认（或按 Enter）'}, 'FontSize', 10);
-    % % colormap(gca, gray);
-    % % 
-    % % % --- 2. 交互框选 XY ROI ---
-    % % h_rect = drawrectangle('Color','cyan', 'LineWidth', 1.5, ...
-    % %                         'Label','ROI','LabelTextColor','cyan');
-    % % % 等待用户双击或按 Enter 确认
-    % % input_msg = 'ROI 框选后按 Enter 确认...';
-    % % fprintf('%s\n', input_msg);
-    % % wait(h_rect);                   % 阻塞直到用户完成编辑
+    % ref_mip = max(data, [], 3);                         % Z轴最大强度投影
+    % ref_disp = double(ref_mip);
+    % ref_disp = ref_disp / max(ref_disp(:) + eps);       % 归一化到[0,1]便于显示
     % 
-    % % roi_pos = round(h_rect.Position);   % [x, y, width, height]，x/y 为左上角
-    % % close(fig_roi);
-    roi_pos = [477, 410, 104, 237];
+    % fig_roi = figure('Name', 'ROI Selection — Draw rectangle on MIP', ...
+    %                  'Position', [200 200 900 700]);
+    % imshow(ref_disp, [], 'InitialMagnification', 'fit');
+    % title({'在 MIP 图上拖拽矩形框选 XY ROI 区域', ...
+    %        '框选完成后双击矩形确认（或按 Enter）'}, 'FontSize', 10);
+    % colormap(gca, gray);
+    % 
+    % % --- 2. 交互框选 XY ROI ---
+    % h_rect = drawrectangle('Color','cyan', 'LineWidth', 1.5, ...
+    %                         'Label','ROI','LabelTextColor','cyan');
+    % % 等待用户双击或按 Enter 确认
+    % input_msg = 'ROI 框选后按 Enter 确认...';
+    % fprintf('%s\n', input_msg);
+    % wait(h_rect);                   % 阻塞直到用户完成编辑
+    % 
+    % roi_pos = round(h_rect.Position);   % [x, y, width, height]，x/y 为左上角
+    % close(fig_roi);
+    roi_pos = [298, 250, 117, 226];
 
     % 防止 ROI 超出图像边界
     x1 = max(1, roi_pos(1));
@@ -60,7 +60,7 @@
     %% preprocessing and denoising
     V_median = medfilt3(V_iso, [5 5 5]);
     V_median = medfilt3(V_median, [3 3 3]);
-    se = strel('sphere', 4); 
+    se = strel('sphere', 5); 
     V_tophat = imtophat(V_median, se);
     volumeViewer(V_tophat);
     %% normalisation
@@ -68,7 +68,7 @@
     V_norm = double(V_tophat) / double(V_max);
     % volumeViewer(V_norm);
     %% Binarization
-    thresh_manual = 0.08;
+    thresh_manual = 0.30;
     thresh_otsu   = thresh_manual;
      
     V_bin = V_norm > thresh_otsu;

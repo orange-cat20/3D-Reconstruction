@@ -16,7 +16,7 @@ CF_raw = imread(fullfile(pathname1, filename1));
 CF_2D = rgb2gray(CF_raw);
 
 % 计算前 5% 强度阈值（即第 95 百分位数）
-threshold_CF = prctile(CF_2D(:), 95);
+threshold_CF = prctile(CF_2D(:), 98);
 
 % 保留强度 >= 阈值的像素，其余置零
 CF_processed = CF_2D;
@@ -44,11 +44,11 @@ title('骨架 mask（白色=骨架点）');
 % bwdist 计算每个像素到最近非零点（骨架）的欧氏距离（单位：像素）
 dist_map = bwdist(skeleton_mask);  % 大小与 CF 相同
 %% Step 4: 逐帧计算纳米粒子到 CF 骨架的距离
-ROI_X = 205;   
-ROI_Y = 155;    
-ROI_W = 110;   
-ROI_H = 136;   
-data = load('D6F2_TrackResult.mat');
+ROI_X = 34;   
+ROI_Y = 19;    
+ROI_W = 129;   
+ROI_H = 195;   
+data = load('D5F4_TrackResult.mat');
 spotsAll = data.trackitBatch.results.spotsAll;
 
 num_frames = size(spotsAll, 1);
@@ -81,7 +81,7 @@ for f = 1:num_frames
     
     % 查距离图
     d_px = dist_map(row_idx, col_idx);
-    d_um = d_px * pixel_size;
+    d_um = d_px;
     
     frames_kept(end+1) = f;    %#ok<AGROW>
     dist_um(end+1)     = d_um; %#ok<AGROW>
@@ -94,7 +94,7 @@ figure('Name', 'Minimum distance', 'NumberTitle', 'off');
 bar(frames_kept, dist_um);
 
 xlabel('Frame Index', 'FontSize', 13);
-ylabel('Minimum distance（um）', 'FontSize', 13);
+ylabel('Minimum distance（px）', 'FontSize', 13);
 title('The distance between Nanoparticles and skeleton', 'FontSize', 14);
 
 grid on;
@@ -105,7 +105,7 @@ figure('Name', 'Distance distribution histogram', 'NumberTitle', 'off');
 
 histogram(dist_um);
 
-xlabel('Minimum distance（um）', 'FontSize', 13);
+xlabel('Minimum distance（px）', 'FontSize', 13);
 ylabel('Times', 'FontSize', 13);
 title('Distance distribution histogram', 'FontSize', 14);
 
