@@ -16,7 +16,7 @@ CF_raw = imread(fullfile(pathname1, filename1));
 CF_2D = rgb2gray(CF_raw);
 
 % 计算前 5% 强度阈值（即第 95 百分位数）
-threshold_CF = prctile(CF_2D(:), 95);
+threshold_CF = prctile(CF_2D(:), 97);
 
 % 保留强度 >= 阈值的像素，其余置零
 CF_processed = CF_2D;
