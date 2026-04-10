@@ -15,28 +15,28 @@
     data_full_disp = data;
     % volumeViewer(data);
     % %% Data Cropped
-    % % ref_mip = max(data, [], 3);                         % Z轴最大强度投影
-    % % ref_disp = double(ref_mip);
-    % % ref_disp = ref_disp / max(ref_disp(:) + eps);       % 归一化到[0,1]便于显示
-    % % 
-    % % fig_roi = figure('Name', 'ROI Selection — Draw rectangle on MIP', ...
-    % %                  'Position', [200 200 900 700]);
-    % % imshow(ref_disp, [], 'InitialMagnification', 'fit');
-    % % title({'在 MIP 图上拖拽矩形框选 XY ROI 区域', ...
-    % %        '框选完成后双击矩形确认（或按 Enter）'}, 'FontSize', 10);
-    % % colormap(gca, gray);
-    % % 
-    % % % --- 2. 交互框选 XY ROI ---
-    % % h_rect = drawrectangle('Color','cyan', 'LineWidth', 1.5, ...
-    % %                         'Label','ROI','LabelTextColor','cyan');
-    % % % 等待用户双击或按 Enter 确认
-    % % input_msg = 'ROI 框选后按 Enter 确认...';
-    % % fprintf('%s\n', input_msg);
-    % % wait(h_rect);                   % 阻塞直到用户完成编辑
+    % ref_mip = max(data, [], 3);                         % Z轴最大强度投影
+    % ref_disp = double(ref_mip);
+    % ref_disp = ref_disp / max(ref_disp(:) + eps);       % 归一化到[0,1]便于显示
     % 
-    % % roi_pos = round(h_rect.Position);   % [x, y, width, height]，x/y 为左上角
-    % % close(fig_roi);
-    roi_pos = [477, 410, 104, 237];
+    % fig_roi = figure('Name', 'ROI Selection — Draw rectangle on MIP', ...
+    %                  'Position', [200 200 900 700]);
+    % imshow(ref_disp, [], 'InitialMagnification', 'fit');
+    % title({'在 MIP 图上拖拽矩形框选 XY ROI 区域', ...
+    %        '框选完成后双击矩形确认（或按 Enter）'}, 'FontSize', 10);
+    % colormap(gca, gray);
+    % 
+    % % --- 2. 交互框选 XY ROI ---
+    % h_rect = drawrectangle('Color','cyan', 'LineWidth', 1.5, ...
+    %                         'Label','ROI','LabelTextColor','cyan');
+    % % 等待用户双击或按 Enter 确认
+    % input_msg = 'ROI 框选后按 Enter 确认...';
+    % fprintf('%s\n', input_msg);
+    % wait(h_rect);                   % 阻塞直到用户完成编辑
+    % 
+    % roi_pos = round(h_rect.Position);   % [x, y, width, height]，x/y 为左上角
+    % close(fig_roi);
+    roi_pos = [644, 112, 182, 278];
 
     % 防止 ROI 超出图像边界
     x1 = max(1, roi_pos(1));
@@ -68,7 +68,7 @@
     V_norm = double(V_tophat) / double(V_max);
     % volumeViewer(V_norm);
     %% Binarization
-    thresh_manual = 0.08;
+    thresh_manual = 0.18;
     thresh_otsu   = thresh_manual;
      
     V_bin = V_norm > thresh_otsu;
@@ -180,7 +180,7 @@
 %% 
     V_viewer = V_iso_disp;        % 复制原始体，保留真实强度
     V_viewer(V_skel) = 1.0;       % 骨架位置强制写为最大值
-    volumeViewer(V_viewer);
+    % volumeViewer(V_viewer);
     mip_skeleton = max(V_skel, [], 3);
     figure
     imshow(mip_skeleton, []);
@@ -222,7 +222,7 @@
     % --- Step 4：骨架写入全图体数据 → volumeViewer ---
     V_full_viewer = data_full_disp;
     V_full_viewer(skel_full) = 1.0;
-    volumeViewer(V_full_viewer);
+    % volumeViewer(V_full_viewer);
     
     % --- Step 5：MIP 叠加图（全图坐标）---
     mip_data_full = max(data_full_disp, [], 3);
