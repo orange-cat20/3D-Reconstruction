@@ -44,11 +44,11 @@ title('骨架 mask（白色=骨架点）');
 % bwdist 计算每个像素到最近非零点（骨架）的欧氏距离（单位：像素）
 dist_map = bwdist(skeleton_mask);  % 大小与 CF 相同
 %% Step 4: 逐帧计算纳米粒子到 CF 骨架的距离
-ROI_X = 362;   
-ROI_Y = 60;    
-ROI_W = 85;   
-ROI_H = 168;   
-data = load('D3f4_TrackResult.mat');
+ROI_X = 262;   
+ROI_Y = 96;    
+ROI_W = 125;   
+ROI_H = 236;   
+data = load('D1F2_TrackResult.mat');
 spotsAll = data.trackitBatch.results.spotsAll;
 
 num_frames = size(spotsAll, 1);

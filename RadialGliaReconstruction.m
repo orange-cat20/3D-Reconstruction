@@ -36,7 +36,7 @@
     % 
     % roi_pos = round(h_rect.Position);   % [x, y, width, height]，x/y 为左上角
     % close(fig_roi);
-    roi_pos = [644, 112, 182, 278];
+    roi_pos = [510, 270, 182, 278];
 
     % 防止 ROI 超出图像边界
     x1 = max(1, roi_pos(1));
@@ -60,7 +60,7 @@
     %% preprocessing and denoising
     V_median = medfilt3(V_iso, [5 5 5]);
     V_median = medfilt3(V_median, [3 3 3]);
-    se = strel('sphere', 4); 
+    se = strel('sphere', 5); 
     V_tophat = imtophat(V_median, se);
     volumeViewer(V_tophat);
     %% normalisation
@@ -68,7 +68,7 @@
     V_norm = double(V_tophat) / double(V_max);
     % volumeViewer(V_norm);
     %% Binarization
-    thresh_manual = 0.18;
+    thresh_manual = 0.20;
     thresh_otsu   = thresh_manual;
      
     V_bin = V_norm > thresh_otsu;
