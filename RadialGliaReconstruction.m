@@ -36,7 +36,7 @@
     % 
     % roi_pos = round(h_rect.Position);   % [x, y, width, height]，x/y 为左上角
     % close(fig_roi);
-    roi_pos = [377, 267, 188, 353];
+    roi_pos = [350, 210, 220, 353];
 
     % 防止 ROI 超出图像边界
     x1 = max(1, roi_pos(1));
@@ -242,7 +242,7 @@
     rectangle('Position', [x1, y1, roi_w, roi_h], ...
               'EdgeColor', 'cyan', 'LineWidth', 1.5, 'LineStyle', '--');
     title('骨架 MIP 高亮叠加至原始全图（青色框=ROI区域）', 'FontSize', 11);
-    out_tif = fullfile(path, [file(1:end-4) '_skeleton_overlay1.tif']);
+    out_tif = fullfile(path, [file(1:end-4) '_skeleton_overlayP500.tif']);
     V_save  = uint16(V_full_viewer / max(V_full_viewer(:)) * 65535);  % 转为16bit
     for i = 1:size(V_save, 3)
         if i == 1
