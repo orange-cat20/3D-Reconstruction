@@ -36,7 +36,7 @@
     % 
     % roi_pos = round(h_rect.Position);   % [x, y, width, height]，x/y 为左上角
     % close(fig_roi);
-    roi_pos = [510, 160, 182, 350];
+    roi_pos = [445, 227, 139, 316];
 
     % 防止 ROI 超出图像边界
     x1 = max(1, roi_pos(1));
@@ -68,7 +68,7 @@
     V_norm = double(V_tophat) / double(V_max);
     % volumeViewer(V_norm);
     %% Binarization
-    thresh_manual = 0.22;
+    thresh_manual = 0.20;
     thresh_otsu   = thresh_manual;
      
     V_bin = V_norm > thresh_otsu;
