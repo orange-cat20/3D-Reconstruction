@@ -16,7 +16,7 @@ CF_raw = imread(fullfile(pathname1, filename1));
 CF_2D = rgb2gray(CF_raw);
 
 % 计算前 5% 强度阈值（即第 95 百分位数）
-threshold_CF = prctile(CF_2D(:), 97);
+threshold_CF = prctile(CF_2D(:), 98);
 
 % 保留强度 >= 阈值的像素，其余置零
 CF_processed = CF_2D;
@@ -44,10 +44,10 @@ title('骨架 mask（白色=骨架点）');
 % bwdist 计算每个像素到最近非零点（骨架）的欧氏距离（单位：像素）
 dist_map = bwdist(skeleton_mask);  % 大小与 CF 相同
 %% Step 4: 逐帧计算纳米粒子到 CF 骨架的距离
-ROI_X = 262;   
-ROI_Y = 96;    
-ROI_W = 125;   
-ROI_H = 236;   
+ROI_X = 251;   
+ROI_Y = 8;    
+ROI_W = 155;   
+ROI_H = 258;   
 data = load('D1F2_TrackResult.mat');
 spotsAll = data.trackitBatch.results.spotsAll;
 
